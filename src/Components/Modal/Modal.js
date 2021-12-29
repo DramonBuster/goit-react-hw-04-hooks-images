@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { Component } from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { createPortal } from 'react-dom';
 import { AiOutlineCloseCircle } from 'react-icons/ai';
@@ -39,54 +39,64 @@ const ModalWrapper = styled.div`
   max-height: calc(100vh - 24px);
 `;
 
-class Modal extends Component {
-  static propTypes = {
-    onClose: PropTypes.func.isRequired,
-    fullSize: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-  };
+const Modal = ({ fullSize, name, onClose}) => {
+  // static propTypes = {
+  //   onClose: PropTypes.func.isRequired,
+  //   fullSize: PropTypes.string.isRequired,
+  //   name: PropTypes.string.isRequired,
+  // };
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-  }
+  // componentDidMount() {
+  //   window.addEventListener('keydown', handleKeyDown);
+  // }
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
+  // componentWillUnmount() {
+  //   window.removeEventListener('keydown', handleKeyDown);
+  // };
 
-  handleKeyDown = event => {
+  const handleKeyDown = event => {
     if (event.code === 'Escape') {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  handleBackdropClick = event => {
+  const handleBackdropClick = event => {
     if (event.currentTarget === event.target) {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  handleClick = () => {
-    this.props.onClose();
+  const handleClick = () => {
+    onClose();
   };
+  
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  });
 
-  render() {
-    const { fullSize, name } = this.props;
-    return createPortal(
-      <OverlayWrapper onClick={this.handleBackdropClick}>
-        <ModalWrapper>
-          <img src={fullSize} alt={name} />
-        </ModalWrapper>
-        <ButtonClose
-          type="button"
-          onClick={this.handleClick}
-        >
-          <AiOutlineCloseCircle style={{ width: 36, height: 36 }} />
-        </ButtonClose>
-      </OverlayWrapper>,
-      modalRoot,
-    );
-  }
+  return createPortal(
+    <OverlayWrapper onClick={handleBackdropClick}>
+      <ModalWrapper>
+        <img src={fullSize} alt={name} />
+      </ModalWrapper>
+      <ButtonClose
+        type="button"
+        onClick={handleClick}
+      >
+        <AiOutlineCloseCircle style={{ width: 36, height: 36 }} />
+      </ButtonClose>
+    </OverlayWrapper>,
+    modalRoot,
+  );
 }
+
+Modal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  fullSize: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+};
 
 export default Modal;

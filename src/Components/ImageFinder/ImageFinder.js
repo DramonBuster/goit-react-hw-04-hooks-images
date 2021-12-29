@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import SearchBar from '../Searchbar/Searchbar';
 import ImageGallery from '../ImageGallery/ImageGallery';
@@ -7,6 +7,7 @@ import Toastify from '../Toastify/Toastify';
 import Modal from '../Modal/Modal';
 import Button from '../Button/Button';
 import API from '../../data/services';
+import ImageNotFound from '../ImageNotFound/ImageNotFound';
 
 const ImageFinderWrapper = styled.div`
   display: grid;
@@ -18,6 +19,7 @@ const ImageFinderWrapper = styled.div`
 const Status = {
   PENDING: 'pending',
   RESOLVED: 'resolved',
+  NOTFOUND: 'notFound',
 };
 
 const scrollToTheBottom = () => {
@@ -61,102 +63,98 @@ const ToTheTopButton = styled.button`
 `;
 
 
-class ImageFinder extends Component {
-  state = {
-    searchQuery: '',
-    images: [],
-    status: null,
-    showModal: false,
-    alt: null,
-    fullSize: null,
-    page: 1,
-  };
+const ImageFinder = () => {
+  // state = {
+  //   searchQuery: '',
+  //   images: [],
+  //   status: null,
+  //   showModal: false,
+  //   alt: null,
+  //   fullSize: null,
+  //   page: 1,
+  // };
 
-  async componentDidUpdate(prevProps, prevState) {
-    const { PENDING, RESOLVED } = Status;
-    const { searchQuery, images, page } = this.state;
-    if (prevState.searchQuery === searchQuery && prevState.page === page)
-      return;
-    this.setState({ status: PENDING });
-    await API(searchQuery, page)
-      .then(responseImages => {
-        if (responseImages.length === 0) {
-          Toastify(
-            'warning',
-            'Sorry, there are no images matching your search query. Please try again.',
-          );
-          this.setState({
-            images: [],
-          });
-        } else if (prevState.searchQuery === searchQuery) {
-          this.setState({
-            images: [...images, ...responseImages],
-          });
-        } else {
-          this.setState({
-            images: responseImages,
-          });
-        }
-        return this.setState({
-          status: RESOLVED,
+  const [searchQuery, setSearchQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState(null);
+  const [showModal, setShowModal] = useState();
+  const [alt, setAlt] = useState(null);
+  const [fullSize, setFullSize] = useState(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!searchQuery) return;
+      const { PENDING, RESOLVED, NOTFOUND } = Status;
+      setStatus(PENDING);
+      await API(searchQuery, page)
+        .then(responseImages => {
+          if (responseImages.length === 0) {
+            setStatus(NOTFOUND);
+            Toastify(
+              'warning',
+              'Sorry, there are no images matching your search query. Please try again.',
+            );
+          } else {
+            setImages(images => [...images, ...responseImages]);
+            setStatus(RESOLVED);
+          }
+        })
+        .catch(error => {
+          setStatus(NOTFOUND);
+          Toastify('error', `${error}`);
         });
-      })
-      .catch(error => {
-        this.setState({ status: null });
-        Toastify('error', `${error}`);
-      });
-    if (prevState.searchQuery === searchQuery) scrollToTheBottom();
-  }
-
-  handleFormSubmit = searchQuery => {
-    this.setState({ searchQuery, page: 1 });
-  };
-
-  handleClick = event => {
-    const { showModal } = this.state;
-    if (showModal) {
-      this.setState({
-        showModal: !showModal,
-        alt: null,
-        fullSize: null,
-      });
-    } else {
-      if (event.target.nodeName !== 'IMG') return;
-      this.setState({
-        showModal: !showModal,
-        alt: event.target.alt,
-        fullSize: event.target.dataset.fullsize,
-      });
+      if (page > 1) scrollToTheBottom();
+    }
+    fetchData();
+  }, [searchQuery, page]);
+    
+    
+    
+  const handleFormSubmit = query => {
+    if (query !== searchQuery) {
+      setImages([]);
+      setSearchQuery(query);
+      setPage(1);
     }
   };
 
-  getLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const handleClick = event => {
+    if (showModal) {
+      setShowModal(!showModal);
+      setAlt(null);
+      setFullSize(null);
+    } else {
+      if (event.target.nodeName !== 'IMG') return;
+      setShowModal(!showModal);
+      setAlt(event.target.alt);
+      setFullSize(event.target.dataset.fullsize);
+    }
   };
 
-  render() {
-    const { images, status, showModal, alt, fullSize } = this.state;
-    return (
-      <ImageFinderWrapper>
-        <SearchBar onSubmit={this.handleFormSubmit} />
-        {status === 'pending' && <Loader />}
-        {status === 'resolved' && (
-          <ImageGallery images={images} onClick={this.handleClick} />
-        )}
-        {images.length > 11 && status === 'resolved' && (
-          <Button onClick={this.getLoadMore} />
-        )}
-        {images.length > 11 && (
-          <ToTheTopButton onClick={scrollToTheTop}>Up</ToTheTopButton>
-        )}
-        {showModal && (
-          <Modal onClose={this.handleClick} fullSize={fullSize} name={alt} />
-        )}
-      </ImageFinderWrapper>
-    );
-  }
-}
+  const getLoadMore = () => {
+    setPage(prevState => prevState + 1);
+  };
+
+  return (
+    <ImageFinderWrapper>
+      <SearchBar onSubmit={handleFormSubmit} />
+      {status === 'pending' && <Loader />}
+      {status === 'resolved' && (
+        <ImageGallery images={images} onClick={handleClick} />
+      )}
+      {images.length > 11 && status === 'resolved' && (
+        <Button onClick={getLoadMore} />
+      )}
+      {images.length > 11 && (
+        <ToTheTopButton onClick={scrollToTheTop}>Up</ToTheTopButton>
+      )}
+      {status === 'notFound' && <ImageNotFound />}
+      {showModal && (
+        <Modal onClose={handleClick} fullSize={fullSize} name={alt} />
+      )}
+    </ImageFinderWrapper>
+  );
+};
 
 export default ImageFinder;
