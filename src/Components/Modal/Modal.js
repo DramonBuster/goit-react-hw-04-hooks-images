@@ -40,19 +40,6 @@ const ModalWrapper = styled.div`
 `;
 
 const Modal = ({ fullSize, name, onClose}) => {
-  // static propTypes = {
-  //   onClose: PropTypes.func.isRequired,
-  //   fullSize: PropTypes.string.isRequired,
-  //   name: PropTypes.string.isRequired,
-  // };
-
-  // componentDidMount() {
-  //   window.addEventListener('keydown', handleKeyDown);
-  // }
-
-  // componentWillUnmount() {
-  //   window.removeEventListener('keydown', handleKeyDown);
-  // };
 
   const handleKeyDown = event => {
     if (event.code === 'Escape') {

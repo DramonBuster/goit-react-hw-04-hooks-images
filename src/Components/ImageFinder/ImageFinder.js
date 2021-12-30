@@ -64,15 +64,6 @@ const ToTheTopButton = styled.button`
 
 
 const ImageFinder = () => {
-  // state = {
-  //   searchQuery: '',
-  //   images: [],
-  //   status: null,
-  //   showModal: false,
-  //   alt: null,
-  //   fullSize: null,
-  //   page: 1,
-  // };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState([]);
