@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import SearchBar from '../Searchbar/Searchbar';
 import ImageGallery from '../ImageGallery/ImageGallery';
@@ -22,20 +22,7 @@ const Status = {
   NOTFOUND: 'notFound',
 };
 
-const scrollToTheBottom = () => {
-  let offsetHeight = document.documentElement.offsetHeight - 965;
-  window.scrollTo({
-    top: offsetHeight,
-    behavior: 'smooth',
-  });
-};
 
-const scrollToTheTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  });
-};
 
 const ToTheTopButton = styled.button`
   position: fixed;
@@ -72,6 +59,19 @@ const ImageFinder = () => {
   const [alt, setAlt] = useState(null);
   const [fullSize, setFullSize] = useState(null);
   const [page, setPage] = useState(1);
+
+  const galleryRef = useRef();
+
+  const scrollToTheBottom = () => {
+    galleryRef.current.scrollIntoView({behavior: "smooth", block: "end" })
+  };
+
+  const scrollToTheTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -131,11 +131,9 @@ const ImageFinder = () => {
     <ImageFinderWrapper>
       <SearchBar onSubmit={handleFormSubmit} />
       {status === 'pending' && <Loader />}
-      {status === 'resolved' && (
-        <ImageGallery images={images} onClick={handleClick} />
-      )}
+      <ImageGallery images={images} onClick={handleClick}/>
       {images.length > 11 && status === 'resolved' && (
-        <Button onClick={getLoadMore} />
+        <div ref={galleryRef} ><Button onClick={getLoadMore} /></div>
       )}
       {images.length > 11 && (
         <ToTheTopButton onClick={scrollToTheTop}>Up</ToTheTopButton>
